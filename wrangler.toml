@@ -17,3 +17,6 @@ PUBLIC_BASE_URL = "http://localhost:5173"
 # Optional emulator support (local dev only)
 # FIRESTORE_EMULATOR_HOST
 # FIREBASE_AUTH_EMULATOR_HOST
+
+[observability]
+enabled = true
