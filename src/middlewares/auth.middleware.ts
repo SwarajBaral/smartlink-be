@@ -15,7 +15,8 @@ export async function verifyFirebaseToken(c: Context<AppEnv>, next: Next): Promi
     const decoded = await admin.auth().verifyIdToken(token);
     c.set('user', { uid: decoded.uid, email: decoded.email });
     await next();
-  } catch {
+  } catch (err) {
+    console.error('[Auth] verifyIdToken failed:', (err as Error).message);
     return c.json({ success: false, message: 'Invalid or expired token' }, 401);
   }
 }
