@@ -24,6 +24,7 @@ async function mintServiceAccountJwt(clientEmail: string, privateKeyPem: string)
   );
 
   const pemBody = privateKeyPem
+    .replace(/\\n/g, '\n')
     .replace(/-----BEGIN PRIVATE KEY-----/g, '')
     .replace(/-----END PRIVATE KEY-----/g, '')
     .replace(/\s/g, '');
