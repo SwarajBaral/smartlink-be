@@ -1,63 +1,74 @@
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { getDb } from '../config/firebase';
+import { FirestoreRest } from '../utils/firestoreRest';
+import type { Bindings } from '../types';
 import { QRCard, QRCardCreate, QRCardUpdate } from '../interfaces/qr.interface';
 
 const COLLECTION = 'qr_cards';
 
+let _db: FirestoreRest | null = null;
+
+export function initDb(env: Bindings): void {
+  if (_db) return;
+  _db = new FirestoreRest(env.FIREBASE_PROJECT_ID, env.FIREBASE_CLIENT_EMAIL, env.FIREBASE_PRIVATE_KEY);
+}
+
+function getDb(): FirestoreRest {
+  if (!_db) throw new Error('Firestore not initialized');
+  return _db;
+}
+
 export const qrRepository = {
   async create(data: QRCardCreate): Promise<QRCard> {
     const db = getDb();
-    const now = Timestamp.now();
-    const docRef = db.collection(COLLECTION).doc();
-    const card: QRCard = { ...data, id: docRef.id, created_at: now, updated_at: now };
-    await docRef.set(card);
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const card: QRCard = { ...data, id, created_at: now, updated_at: now };
+    await db.set(COLLECTION, id, card as unknown as Record<string, unknown>);
     return card;
   },
 
   async findAll(): Promise<QRCard[]> {
     const db = getDb();
-    const snapshot = await db.collection(COLLECTION).orderBy('created_at', 'desc').get();
-    return snapshot.docs.map((doc) => doc.data() as QRCard);
+    const rows = await db.runQuery({
+      from: [{ collectionId: COLLECTION }],
+      orderBy: [{ field: { fieldPath: 'created_at' }, direction: 'DESCENDING' }],
+    });
+    return rows as unknown as QRCard[];
   },
 
   async findById(id: string): Promise<QRCard | null> {
     const db = getDb();
-    const doc = await db.collection(COLLECTION).doc(id).get();
-    if (!doc.exists) return null;
-    return doc.data() as QRCard;
+    return (await db.get(COLLECTION, id)) as QRCard | null;
   },
 
   async findBySlug(slug: string): Promise<QRCard | null> {
     const db = getDb();
-    const snapshot = await db
-      .collection(COLLECTION)
-      .where('qr_slug', '==', slug)
-      .limit(1)
-      .get();
-    if (snapshot.empty) return null;
-    return snapshot.docs[0].data() as QRCard;
+    const rows = await db.runQuery({
+      from: [{ collectionId: COLLECTION }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'qr_slug' },
+          op: 'EQUAL',
+          value: { stringValue: slug },
+        },
+      },
+      limit: 1,
+    });
+    return rows.length > 0 ? (rows[0] as unknown as QRCard) : null;
   },
 
   async update(id: string, data: QRCardUpdate): Promise<QRCard | null> {
     const db = getDb();
-    const ref = db.collection(COLLECTION).doc(id);
-    await ref.update({ ...data, updated_at: FieldValue.serverTimestamp() });
-    const updated = await ref.get();
-    if (!updated.exists) return null;
-    return updated.data() as QRCard;
+    await db.update(COLLECTION, id, { ...(data as Record<string, unknown>), updated_at: new Date().toISOString() });
+    return (await db.get(COLLECTION, id)) as QRCard | null;
   },
 
   async updateStatus(id: string, enabled: boolean): Promise<QRCard | null> {
     const db = getDb();
-    const ref = db.collection(COLLECTION).doc(id);
-    await ref.update({ enabled, updated_at: FieldValue.serverTimestamp() });
-    const updated = await ref.get();
-    if (!updated.exists) return null;
-    return updated.data() as QRCard;
+    await db.update(COLLECTION, id, { enabled, updated_at: new Date().toISOString() });
+    return (await db.get(COLLECTION, id)) as QRCard | null;
   },
 
   async delete(id: string): Promise<void> {
-    const db = getDb();
-    await db.collection(COLLECTION).doc(id).delete();
+    await getDb().delete(COLLECTION, id);
   },
 };

@@ -8,7 +8,6 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "firebase-admin": "^12.2.0",
     "hono": "^4.12.18",
     "qrcode": "^1.5.4",
     "zod": "^3.23.8"

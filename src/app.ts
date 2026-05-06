@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
-import { initFirebase } from './config/firebase';
+import { initDb } from './repositories/qr.repository';
 import qrRoutes from './routes/qr.routes';
 import authRoutes from './routes/auth.routes';
 import type { AppEnv } from './types';
@@ -30,7 +30,7 @@ app.use('*', async (c, next) => {
 
 // Initialize Firebase once per isolate on the first request
 app.use('*', async (c, next) => {
-  initFirebase(c.env);
+  initDb(c.env);
   await next();
 });
 

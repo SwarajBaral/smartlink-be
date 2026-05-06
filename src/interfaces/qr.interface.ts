@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase-admin/firestore';
-
 export interface QRCard {
   id: string;
   qr_slug: string;
@@ -24,8 +22,8 @@ export interface QRCard {
 
   enabled: boolean;
 
-  created_at: Timestamp;
-  updated_at: Timestamp;
+  created_at: string;
+  updated_at: string;
 }
 
 export type QRCardCreate = Omit<QRCard, 'id' | 'created_at' | 'updated_at'>;
