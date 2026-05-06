@@ -5,14 +5,10 @@ import { SMARTLINK_DEFAULTS } from '../constants/defaults';
 import { CreateQRInput, UpdateQRInput } from '../validators/qr.validator';
 import { PublicCardData, QRCard } from '../interfaces/qr.interface';
 
-function getPublicBaseUrl(): string {
-  return process.env.PUBLIC_BASE_URL || 'http://localhost:5173';
-}
-
 export const qrService = {
-  async createQR(data: CreateQRInput): Promise<QRCard> {
+  async createQR(data: CreateQRInput, publicBaseUrl: string): Promise<QRCard> {
     const slug = generateSlug();
-    const cardUrl = `${getPublicBaseUrl()}/card/${slug}`;
+    const cardUrl = `${publicBaseUrl}/card/${slug}`;
     const qrImageBase64 = await generateQRImage(cardUrl);
 
     return qrRepository.create({

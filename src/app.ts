@@ -1,60 +1,49 @@
-import 'dotenv/config';
-import express from 'express';
-import helmet from 'helmet';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { secureHeaders } from 'hono/secure-headers';
+import { initFirebase } from './config/firebase';
 import qrRoutes from './routes/qr.routes';
 import authRoutes from './routes/auth.routes';
-import { errorMiddleware } from './middlewares/error.middleware';
+import type { AppEnv } from './types';
 
-const app = express();
+const app = new Hono<AppEnv>();
 
-app.use(helmet());
+app.use('*', secureHeaders());
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://localhost:5173',
-];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, mobile apps)
-      if (!origin) return callback(null, true);
-      // In development, allow all ngrok/tunnel origins
+app.use('*', async (c, next) => {
+  const allowed = [c.env.FRONTEND_URL ?? 'http://localhost:5173', 'http://localhost:5173'];
+  return cors({
+    origin: (origin) => {
+      if (!origin) return null;
       if (
-        process.env.NODE_ENV !== 'production' ||
-        allowedOrigins.includes(origin) ||
+        allowed.includes(origin) ||
         origin.endsWith('.ngrok-free.app') ||
         origin.endsWith('.ngrok.io')
       ) {
-        return callback(null, true);
+        return origin;
       }
-      callback(new Error(`CORS blocked: ${origin}`));
+      return null;
     },
     credentials: true,
-  })
-);
-
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  })(c, next);
 });
 
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/qr', qrRoutes);
+// Initialize Firebase once per isolate on the first request
+app.use('*', async (c, next) => {
+  initFirebase(c.env);
+  await next();
+});
 
-app.use(errorMiddleware);
+app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+app.route('/api/v1/auth', authRoutes);
+app.route('/api/v1/qr', qrRoutes);
+
+app.onError((err, c) => {
+  console.error('[Error]', err.message);
+  return c.json({ success: false, message: err.message || 'Internal server error' }, 500);
+});
+
+app.notFound((c) => c.json({ success: false, message: 'Not found' }, 404));
 
 export default app;

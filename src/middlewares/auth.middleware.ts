@@ -1,27 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
+import { type Context, type Next } from 'hono';
 import admin from '../config/firebase';
-import { AuthenticatedRequest } from '../types';
+import type { AppEnv } from '../types';
 
-export async function verifyFirebaseToken(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  const authHeader = req.headers.authorization;
+export async function verifyFirebaseToken(c: Context<AppEnv>, next: Next): Promise<Response | void> {
+  const authHeader = c.req.header('Authorization');
 
   if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ success: false, message: 'Missing or invalid authorization header' });
-    return;
+    return c.json({ success: false, message: 'Missing or invalid authorization header' }, 401);
   }
 
   const token = authHeader.split(' ')[1];
 
   try {
-    // When using the Auth emulator, verifyIdToken works without real Firebase credentials
     const decoded = await admin.auth().verifyIdToken(token);
-    (req as AuthenticatedRequest).user = { uid: decoded.uid, email: decoded.email };
-    next();
+    c.set('user', { uid: decoded.uid, email: decoded.email });
+    await next();
   } catch {
-    res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    return c.json({ success: false, message: 'Invalid or expired token' }, 401);
   }
 }

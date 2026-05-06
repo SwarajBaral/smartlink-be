@@ -1,0 +1,19 @@
+name = "smartlink-be"
+main = "src/worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Non-secret runtime vars — update these before deploying
+[vars]
+NODE_ENV = "production"
+FRONTEND_URL = "http://localhost:5173"
+PUBLIC_BASE_URL = "http://localhost:5173"
+
+# Secrets — set with: wrangler secret put <NAME>
+# FIREBASE_PROJECT_ID
+# FIREBASE_PRIVATE_KEY
+# FIREBASE_CLIENT_EMAIL
+
+# Optional emulator support (local dev only)
+# FIRESTORE_EMULATOR_HOST
+# FIREBASE_AUTH_EMULATOR_HOST

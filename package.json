@@ -2,30 +2,22 @@
   "name": "smartlink-backend",
   "version": "1.0.0",
   "description": "SmartLink Dynamic QR Visiting Card Platform - Backend API",
-  "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.3.1",
     "firebase-admin": "^12.2.0",
-    "helmet": "^7.1.0",
+    "hono": "^4.12.18",
     "qrcode": "^1.5.4",
-    "uuid": "^10.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
+    "@cloudflare/workers-types": "^4.20260506.1",
     "@types/node": "^20.14.9",
     "@types/qrcode": "^1.5.5",
-    "@types/uuid": "^10.0.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "wrangler": "^4.88.0"
   }
 }

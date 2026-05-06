@@ -1,7 +1,6 @@
-import { Request, Response } from 'express';
+import type { Context } from 'hono';
+import type { AppEnv } from '../types';
 
 export const authController = {
-  async ping(_req: Request, res: Response): Promise<void> {
-    res.json({ success: true, message: 'Auth service is running' });
-  },
+  ping: (c: Context<AppEnv>) => c.json({ success: true, message: 'Auth service is running' }),
 };
