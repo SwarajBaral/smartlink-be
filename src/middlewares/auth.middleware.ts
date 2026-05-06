@@ -1,5 +1,5 @@
 import { type Context, type Next } from 'hono';
-import admin from '../config/firebase';
+import { verifyFirebaseJwt } from '../utils/firebaseAuth';
 import type { AppEnv } from '../types';
 
 export async function verifyFirebaseToken(c: Context<AppEnv>, next: Next): Promise<Response | void> {
@@ -12,8 +12,8 @@ export async function verifyFirebaseToken(c: Context<AppEnv>, next: Next): Promi
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = await admin.auth().verifyIdToken(token);
-    c.set('user', { uid: decoded.uid, email: decoded.email });
+    const decoded = await verifyFirebaseJwt(token, c.env.FIREBASE_PROJECT_ID);
+    c.set('user', decoded);
     await next();
   } catch (err) {
     console.error('[Auth] verifyIdToken failed:', (err as Error).message);
